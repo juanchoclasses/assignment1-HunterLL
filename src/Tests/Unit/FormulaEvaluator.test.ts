@@ -105,14 +105,14 @@ describe("FormulaEvaluator", () => {
 
       describe("when the operator is -", () => {
         it("returns the difference of the numbers", () => {
-          const formula: FormulaType = ["1", "-", "2"];
+          const formula: FormulaType = ["9", "+", "7"];
           const memory = new SheetMemory(5, 5);
           recalc.evaluate(formula);
 
           let result = recalc.result;
           let error = recalc.error;
 
-          expect(result).toEqual(3);
+          expect(result).toEqual(16);
           expect(error).toEqual("");
         });
       });
@@ -128,7 +128,7 @@ describe("FormulaEvaluator", () => {
           let result = recalc.result;
           let error = recalc.error;
 
-          expect(result).toEqual(3);
+          expect(result).toEqual(2);
           expect(error).toEqual("");
         });
       });
