@@ -19,17 +19,17 @@ export class FormulaEvaluator {
   }
 
   /**
-    * place holder for the evaluator.   I am not sure what the type of the formula is yet 
-    * I do know that there will be a list of tokens so i will return the length of the array
-    * 
-    * I also need to test the error display in the front end so i will set the error message to
-    * the error messages found In GlobalDefinitions.ts
-    * 
-    * according to this formula.
-    * 
-    7 tokens partial: "#ERR",
-    8 tokens divideByZero: "#DIV/0!",
-    9 tokens invalidCell: "#REF!",
+  * place holder for the evaluator.   I am not sure what the type of the formula is yet 
+  * I do know that there will be a list of tokens so i will return the length of the array
+  * 
+  * I also need to test the error display in the front end so i will set the error message to
+  * the error messages found In GlobalDefinitions.ts
+  * 
+  * according to this formula.
+  * 
+  7 tokens partial: "#ERR",
+  8 tokens divideByZero: "#DIV/0!",
+  9 tokens invalidCell: "#REF!",
   10 tokens invalidFormula: "#ERR",
   11 tokens invalidNumber: "#ERR",
   12 tokens invalidOperator: "#ERR",
@@ -40,63 +40,139 @@ export class FormulaEvaluator {
                       (if you are in a hurry you can fix it yourself)
                                Sincerely 
                                Bilbo
-    * 
+  * 
+  */
+  
+  /**
+   * A helper function to check if the formula is valid, if not set the error message
+   * @param formula the input formula
+   * @returns the result of the formula
    */
+  calculate(formula: FormulaType) : number{
+        const stack: number[] = [];
+        let num: number = 0.0;
+        let sign: string = '+';
 
-  evaluate(formula: FormulaType) {
-
-
-    // set the this._result to the length of the formula
-
-    this._result = formula.length;
-    this._errorMessage = "";
-
-    switch (formula.length) {
-      case 0:
-        this._errorMessage = ErrorMessages.emptyFormula;
-        break;
-      case 7:
-        this._errorMessage = ErrorMessages.partial;
-        break;
-      case 8:
-        this._errorMessage = ErrorMessages.divideByZero;
-        break;
-      case 9:
-        this._errorMessage = ErrorMessages.invalidCell;
-        break;
-      case 10:
-        this._errorMessage = ErrorMessages.invalidFormula;
-        break;
-      case 11:
-        this._errorMessage = ErrorMessages.invalidNumber;
-        break;
-      case 12:
-        this._errorMessage = ErrorMessages.invalidOperator;
-        break;
-      case 13:
-        this._errorMessage = ErrorMessages.missingParentheses;
-        break;
-      default:
+        const n: number = formula.length;
         this._errorMessage = "";
-        break;
-    }
+        if (n === 0) {
+          // Set an error message for an empty formula
+          this._errorOccured = true;
+          this._errorMessage = ErrorMessages.emptyFormula;
+          return 0;
+        }
+        for (let i: number = 0; i < n; i++) {
+            const current: string = formula[i];
+            if (/^[\d.]+$/.test(current)) { // Allow decimal numbers
+              num = parseFloat(current);
+            }
+            if (this.isCellReference(current)) {
+                let [value, error] = this.getCellValue(current);
+                if (error !== "") {
+                    this._errorOccured = true;
+                    this._errorMessage = error;
+                    return 0;
+                }
+                num = value;
+
+            }
+            // if the current token is a left parentheses
+            // find the matching right parentheses and evaluate the expression in between
+            if (current === '(') {
+                // if the formula ends with a left parentheses return invalid formula error
+                if(i === n - 1) {
+                  this._errorOccured = true;
+                  this._errorMessage = ErrorMessages.invalidFormula;
+                  return num;
+                }
+                // if the next token is a right parentheses return invalid missingParentheses error
+                if (formula[i + 1] === ')') {
+                  this._errorOccured = true;
+                  this._errorMessage = ErrorMessages.missingParentheses;
+                    return 0;
+                }
+              
+                let j: number = i + 1;
+                let braces: number = 1;
+                for (; j < n; j++) {
+                    if (formula[j] === '(') ++braces;
+                    if (formula[j] === ')') --braces;
+                    if (braces === 0) break;
+                }
+                
+                num = this.calculate(formula.slice(i + 1, j));
+                i = j;
+            }
+            
+            // if the current token is an operator or the formula ends
+            if ( current === '+' || current === '-' || current === '*' || current === '/' || i === n - 1) {
+              
+              switch (sign) {
+                    case '+':
+                        stack.push(num);
+                        break;
+                    case '-':
+                        stack.push(-num);
+                        break;
+                    case '*':
+                        stack.push(stack.pop()! * num);
+                        break;
+                    case '/':
+                      // if the divisor is zero return divideByZero error
+                        if(num === 0){
+                          this._errorOccured = true;
+                          this._errorMessage = ErrorMessages.divideByZero;
+                          return Infinity;
+                        }
+                        stack.push(stack.pop()! / num);
+                        break;
+                }
+                num = 0.0;
+                sign = current;
+            }
+
+        }
+        //if the formula end with an operator return invalid formula error
+        if(formula[n-1] === '+' || formula[n-1] === '-' || formula[n-1] === '*' || formula[n-1] === '/'){
+          this._errorOccured = true;
+          this._errorMessage = ErrorMessages.invalidFormula;
+        }
+        // sum up the result
+        let result: number = 0;
+        while (stack.length > 0) result += stack.pop()!;
+
+        return result;
   }
 
+  /**
+   * evaluate the formula
+   * @param formula
+   * @returns the result of the formula
+  **/
+  evaluate(formula: FormulaType){
+    this._result = this.calculate(formula);
+  }
+
+  /**
+   * 
+   * @returns error message
+   */
   public get error(): string {
     return this._errorMessage
   }
 
+  /**
+   * 
+   * @returns the result of the formula
+   */
   public get result(): number {
     return this._result;
   }
 
-
-
-
   /**
    * 
    * @param token 
-   * @returns true if the toke can be parsed to a number
+   * @returns true if the token can be parsed to a number
    */
   isNumber(token: TokenType): boolean {
     return !isNaN(Number(token));
