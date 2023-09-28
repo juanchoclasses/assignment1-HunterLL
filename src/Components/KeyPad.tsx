@@ -11,9 +11,15 @@ interface KeyPadProps {
   onButtonClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onCommandButtonClick: (text: string) => void;
   currentlyEditing: boolean;
+  userName: string; // Add userName as a prop
 } // interface KeyPadProps
 
-function KeyPad({ onButtonClick, onCommandButtonClick, currentlyEditing }: KeyPadProps) {
+function KeyPad({ onButtonClick, onCommandButtonClick, currentlyEditing, userName }: KeyPadProps) {
+  function alertUsername() {
+    if (userName === "") {
+      alert("Please enter a user name.");
+    }
+  } // alertUsername
 
   // the done button has two styles and two text values depending on currently Editing
   // if currentlyEditing is true then the button will have the class button-edit-end
@@ -32,8 +38,10 @@ function KeyPad({ onButtonClick, onCommandButtonClick, currentlyEditing }: KeyPa
   // the buttons use one of three classes
   // numberButton, operatorButton, and otherButton
   return (
-    <div className="buttons">
-      <div className="buttons-row">
+    <div className="buttons" onClick={alertUsername}>
+      {/* When the user name is empty, alert the user to enter a user name. */}
+      
+      <div className="buttons-row" >
 
         <Button
           text="7"

@@ -60,6 +60,7 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
         onChange={(event) => {
           // get the text from the input
           let userName = event.target.value;
+          
           window.sessionStorage.setItem('userName', userName);
           // set the user name
           setUserName(userName);
@@ -136,6 +137,11 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
    * If the edit status is false then it will ask the machine to update the current formula.
    */
   function onCellClick(event: React.MouseEvent<HTMLButtonElement>): void {
+    //check if username is set, if not pop up a warning to enter a username
+    if (userName === "") {
+      alert("Please enter a user name");
+      return;
+    }
 
     const cellLabel = event.currentTarget.getAttribute("cell-label");
     // calculate the current row and column of the clicked on cell
@@ -168,7 +174,8 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
         currentlyEditing={currentlyEditing} ></SheetHolder>}
       <KeyPad onButtonClick={onButtonClick}
         onCommandButtonClick={onCommandButtonClick}
-        currentlyEditing={currentlyEditing}></KeyPad>
+        currentlyEditing={currentlyEditing}
+        userName={userName}></KeyPad>
       {getUserLogin()}
     </div>
   )
